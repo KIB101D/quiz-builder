@@ -2,6 +2,8 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Don't generate AGENTS.md on `next dev`
+  agentRules: false,
   turbopack: {
     rules: {
       '*.css': {
