@@ -2,6 +2,10 @@
 
 A full-stack app for building quizzes with three question types: **True/False**, **Short answer** and **Multiple choice** (several correct answers).
 
+**Live demo:** [quiz-builder-kib101d.vercel.app](https://quiz-builder-kib101d.vercel.app)
+
+> The demo has no authentication (none is required by the task), so anyone can create or delete quizzes. If the list is empty, create one at `/create`.
+
 | Layer    | Stack                                                                               |
 | -------- | ----------------------------------------------------------------------------------- |
 | Backend  | Node.js, Express 5, TypeScript, Prisma 7, PostgreSQL, Zod                           |
@@ -168,25 +172,25 @@ quiz-builder/
 
 ## Deployment (free tier)
 
-Everything runs on free plans: both apps on **Vercel** (Hobby) and PostgreSQL on **Neon**, connected through Vercel's Neon integration. The backend is deployed as a Vercel Function (Express is detected automatically), so it does not sleep between requests.
+The [live demo](https://quiz-builder-kib101d.vercel.app) runs on free plans: both apps on **Vercel** (Hobby) and PostgreSQL from **Prisma Postgres**, added through Vercel Storage. The backend is deployed as a Vercel Function (Express is detected automatically), so it does not sleep between requests.
 
 The repository holds two Vercel projects, one per folder:
 
-| Project  | Root Directory | Environment variables                                                |
-| -------- | -------------- | -------------------------------------------------------------------- |
-| Backend  | `backend`      | `DATABASE_URL`, `DATABASE_URL_UNPOOLED` (set by Neon), `CORS_ORIGIN` |
-| Frontend | `frontend`     | `NEXT_PUBLIC_API_URL`                                                |
+| Project  | Root Directory | Environment variables                                           |
+| -------- | -------------- | --------------------------------------------------------------- |
+| Backend  | `backend`      | `DATABASE_URL` (set by the database integration), `CORS_ORIGIN` |
+| Frontend | `frontend`     | `NEXT_PUBLIC_API_URL`                                           |
 
-1. **Backend project.** On Vercel, **Add New → Project**, import this repository and set **Root Directory** to `backend`. The first deployment fails because there is no database yet. That is expected.
-2. **Database.** In the backend project open **Storage → Create Database → Neon** and connect it to the project. This adds `DATABASE_URL` (pooled, used by the app) and `DATABASE_URL_UNPOOLED` (direct, used for migrations). Redeploy: the build runs `prisma migrate deploy` (`vercel-build` script) and creates the tables.
-3. **Frontend project.** Import the same repository again, set **Root Directory** to `frontend` and add `NEXT_PUBLIC_API_URL` = the backend URL (e.g. `https://quiz-builder-api.vercel.app`, no trailing slash).
-4. **CORS.** In the backend project add `CORS_ORIGIN` = the frontend URL (e.g. `https://quiz-builder.vercel.app`) and redeploy.
-5. **Sample data (optional).** Copy `DATABASE_URL_UNPOOLED` from the backend project's environment variables and run the seed once from your machine:
+1. **Backend project.** On Vercel, **Add New → Project**, import this repository and set **Root Directory** to `backend`.
+2. **Database.** In the backend project open **Storage → Create Database → Prisma Postgres** (Neon works too) and connect it to the project. This adds `DATABASE_URL`. Deploy or redeploy: the build runs `prisma migrate deploy` (`vercel-build` script) and creates the tables.
+3. **Frontend project.** Import the same repository again, set **Root Directory** to `frontend` and add `NEXT_PUBLIC_API_URL` = the backend's production domain (no trailing slash).
+4. **CORS.** In the backend project add `CORS_ORIGIN` = the frontend's production domain (e.g. `https://quiz-builder-kib101d.vercel.app`) and redeploy.
+5. **Sample data (optional).** Run the seed once from your machine against the production database:
    ```bash
-   cd backend && DATABASE_URL="<neon-connection-string>" npm run db:seed
+   cd backend && DATABASE_URL="<production-connection-string>" npm run db:seed
    ```
 
-> `NEXT_PUBLIC_API_URL` is inlined at build time, so redeploy the frontend after changing it. Browser requests from preview deployments are blocked by CORS unless their URLs are added to `CORS_ORIGIN` (comma-separated).
+> Use the production domains from **Settings → Domains**. Per-deployment URLs are protected by Vercel Authentication by default. `NEXT_PUBLIC_API_URL` is inlined at build time, so redeploy the frontend after changing it.
 
 ## Scripts
 
