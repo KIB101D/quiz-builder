@@ -84,7 +84,7 @@ export function QuizForm() {
           id="quiz-title"
           autoFocus
           placeholder="e.g. JavaScript Fundamentals"
-          className="h-12 text-lg"
+          inputSize="lg"
           invalid={!!errors.title}
           aria-describedby={errors.title ? 'quiz-title-error' : undefined}
           {...register('title')}
