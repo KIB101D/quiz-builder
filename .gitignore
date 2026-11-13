@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Builds
+dist/
+.next/
+out/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# Generated Prisma client
+backend/src/generated/
+
+# Environment files (only examples are committed)
+.env
+.env.*
+!.env.example
+
+# Logs & misc
+*.log
+coverage/
+.DS_Store
+.vscode/
+.idea/
