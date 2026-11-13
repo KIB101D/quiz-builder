@@ -1,0 +1,57 @@
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+// Connection URL lives in prisma.config.ts (read from DATABASE_URL)
+datasource db {
+  provider = "postgresql"
+}
+
+enum QuestionType {
+  BOOLEAN
+  INPUT
+  CHECKBOX
+}
+
+model Quiz {
+  id        Int        @id @default(autoincrement())
+  title     String     @db.VarChar(200)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  questions Question[]
+
+  @@index([createdAt])
+}
+
+model Question {
+  id       Int          @id @default(autoincrement())
+  quizId   Int
+  quiz     Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  type     QuestionType
+  text     String       @db.VarChar(500)
+  position Int
+
+  /// Correct answer for BOOLEAN questions
+  booleanAnswer Boolean?
+  /// Correct answer for INPUT questions
+  textAnswer    String?  @db.VarChar(500)
+
+  /// Answer options for CHECKBOX questions
+  options Option[]
+
+  @@unique([quizId, position])
+}
+
+model Option {
+  id         Int      @id @default(autoincrement())
+  questionId Int
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  text       String   @db.VarChar(300)
+  isCorrect  Boolean  @default(false)
+  position   Int
+
+  @@unique([questionId, position])
+}
