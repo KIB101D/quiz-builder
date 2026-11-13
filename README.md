@@ -166,6 +166,29 @@ quiz-builder/
 - **Layering.** Routes handle HTTP, the controller extracts validated input, the service talks to Prisma and the mapper converts DB rows into a clean discriminated-union DTO. The service is mocked in the route tests, so they don't need a database.
 - **Frontend data flow.** The list and detail pages fetch on the server (always fresh). Deleting happens in a client component that updates the list without a reload.
 
+## Deployment (free tier)
+
+| Part     | Host   | Notes                                                                     |
+| -------- | ------ | ------------------------------------------------------------------------- |
+| Database | Neon   | Free PostgreSQL; the compute sleeps when idle and wakes in about a second |
+| Backend  | Render | Free web service, configured by `render.yaml`                             |
+| Frontend | Vercel | Hobby plan; root directory `frontend`                                     |
+
+1. **Neon.** Create a project and copy the connection string (the direct one, without `-pooler` in the host; it already includes `sslmode=require`).
+2. **Render.** Create a **New → Blueprint** from this repository. When prompted, set:
+   - `DATABASE_URL`: the Neon connection string
+   - `CORS_ORIGIN`: the Vercel URL from step 3 (you can set it after the first deploy)
+
+   The build runs `prisma migrate deploy`, so the schema is created automatically.
+
+3. **Vercel.** Import the repository and set **Root Directory** to `frontend`. Add `NEXT_PUBLIC_API_URL` = your Render URL (e.g. `https://quiz-builder-api.onrender.com`) and deploy.
+4. **Sample data (optional).** Run the seed once from your machine against Neon:
+   ```bash
+   cd backend && DATABASE_URL="<neon-connection-string>" npm run db:seed
+   ```
+
+> The free Render service sleeps after 15 minutes without traffic, and the first request after that takes up to a minute.
+
 ## Scripts
 
 Both `backend/` and `frontend/` provide:
