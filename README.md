@@ -147,8 +147,8 @@ quiz-builder/
 │   │   ├── lib/                # Prisma client, HttpError
 │   │   ├── middleware/         # Zod validation, error handling
 │   │   ├── modules/quizzes/    # routes → controller → service, schema, DTO mapper
-│   │   ├── app.ts              # Express app factory (used by tests)
-│   │   └── index.ts            # server bootstrap
+│   │   ├── create-app.ts       # API app factory (used by tests)
+│   │   └── index.ts            # entrypoint: local server / Vercel Function
 │   └── tests/                  # Vitest + Supertest
 └── frontend/
     └── src/
@@ -168,26 +168,25 @@ quiz-builder/
 
 ## Deployment (free tier)
 
-| Part     | Host   | Notes                                                                     |
-| -------- | ------ | ------------------------------------------------------------------------- |
-| Database | Neon   | Free PostgreSQL; the compute sleeps when idle and wakes in about a second |
-| Backend  | Render | Free web service, configured by `render.yaml`                             |
-| Frontend | Vercel | Hobby plan; root directory `frontend`                                     |
+Everything runs on free plans: both apps on **Vercel** (Hobby) and PostgreSQL on **Neon**, connected through Vercel's Neon integration. The backend is deployed as a Vercel Function (Express is detected automatically), so it does not sleep between requests.
 
-1. **Neon.** Create a project and copy the connection string (the direct one, without `-pooler` in the host; it already includes `sslmode=require`).
-2. **Render.** Create a **New → Blueprint** from this repository. When prompted, set:
-   - `DATABASE_URL`: the Neon connection string
-   - `CORS_ORIGIN`: the Vercel URL from step 3 (you can set it after the first deploy)
+The repository holds two Vercel projects, one per folder:
 
-   The build runs `prisma migrate deploy`, so the schema is created automatically.
+| Project  | Root Directory | Environment variables                                                |
+| -------- | -------------- | -------------------------------------------------------------------- |
+| Backend  | `backend`      | `DATABASE_URL`, `DATABASE_URL_UNPOOLED` (set by Neon), `CORS_ORIGIN` |
+| Frontend | `frontend`     | `NEXT_PUBLIC_API_URL`                                                |
 
-3. **Vercel.** Import the repository and set **Root Directory** to `frontend`. Add `NEXT_PUBLIC_API_URL` = your Render URL (e.g. `https://quiz-builder-api.onrender.com`) and deploy.
-4. **Sample data (optional).** Run the seed once from your machine against Neon:
+1. **Backend project.** On Vercel, **Add New → Project**, import this repository and set **Root Directory** to `backend`. The first deployment fails because there is no database yet. That is expected.
+2. **Database.** In the backend project open **Storage → Create Database → Neon** and connect it to the project. This adds `DATABASE_URL` (pooled, used by the app) and `DATABASE_URL_UNPOOLED` (direct, used for migrations). Redeploy: the build runs `prisma migrate deploy` (`vercel-build` script) and creates the tables.
+3. **Frontend project.** Import the same repository again, set **Root Directory** to `frontend` and add `NEXT_PUBLIC_API_URL` = the backend URL (e.g. `https://quiz-builder-api.vercel.app`, no trailing slash).
+4. **CORS.** In the backend project add `CORS_ORIGIN` = the frontend URL (e.g. `https://quiz-builder.vercel.app`) and redeploy.
+5. **Sample data (optional).** Copy `DATABASE_URL_UNPOOLED` from the backend project's environment variables and run the seed once from your machine:
    ```bash
    cd backend && DATABASE_URL="<neon-connection-string>" npm run db:seed
    ```
 
-> The free Render service sleeps after 15 minutes without traffic, and the first request after that takes up to a minute.
+> `NEXT_PUBLIC_API_URL` is inlined at build time, so redeploy the frontend after changing it. Browser requests from preview deployments are blocked by CORS unless their URLs are added to `CORS_ORIGIN` (comma-separated).
 
 ## Scripts
 
